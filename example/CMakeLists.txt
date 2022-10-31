@@ -1,11 +1,13 @@
 include(CheckCCompilerFlag)
 
-if((CMAKE_C_COMPILER_ID MATCHES "GNU") OR (CMAKE_C_COMPILER_ID MATCHES "Clang"))
+# compiler flags for GNU/Clang and MSVC
+if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     set(OPTIONS -Werror)
 elseif(CMAKE_C_COMPILER_ID MATCHES "MSVC")
     set(OPTIONS /MD)
 endif()
 
+# helper function to make examples
 function(make_example src target)
     add_executable(${target} ${src} ${${LIBRARY_NAME}_SOURCE_FILES})
     set_target_properties(${target} PROPERTIES C_EXTENSIONS OFF)

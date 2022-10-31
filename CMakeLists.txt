@@ -4,10 +4,16 @@ project("examplelib" VERSION 0.1.0 LANGUAGES C)
 set_property(GLOBAL PROPERTY C_STANDARD 90)
 
 set(LIBRARY_NAME ${PROJECT_NAME})
-set(VCPKG_PATH "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg")
 
-set(CMAKE_TOOLCHAIN_FILE "${VCPKG_PATH}/scripts/buildsystems/vcpkg.cmake"
-  CACHE STRING "Vcpkg toolchain file")
+# check if VCPKG exists and get path
+set(VCPKG_PATH "$ENV{VCPKG_ROOT}")
+if(${VCPKG_PATH} STREQUAL "")
+    message(SEND_ERROR "VCPKG_ROOT environment variable undefined.")
+else()
+    set(VCPKG TRUE)
+    set(CMAKE_TOOLCHAIN_FILE "${VCPKG_PATH}/scripts/buildsystems/vcpkg.cmake"
+        CACHE STRING "Vcpkg toolchain file")
+endif()
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     set(IS_TOPLEVEL_PROJECT TRUE)
@@ -15,33 +21,42 @@ else()
     set(IS_TOPLEVEL_PROJECT FALSE)
 endif()
 
-option(${PROJECT_NAME}_OPT_BUILD_EXAMPLES "Build ${PROJECT_NAME} examples" ${IS_TOPLEVEL_PROJECT})
-option(${PROJECT_NAME}_OPT_BUILD_TESTS "Build and perform ${PROJECT_NAME} tests" ${IS_TOPLEVEL_PROJECT})
-option(${PROJECT_NAME}_OPT_INSTALL "Generate and install ${PROJECT_NAME} target" ${IS_TOPLEVEL_PROJECT})
-option(${PROJECT_NAME}_OPT_EXAMPLE "Build ${PROJECT_NAME} with example flag" FALSE)
+# define LINUX helper variable
+if(UNIX AND NOT APPLE)
+    set(LINUX TRUE)
+endif()
 
-set(${PROJECT_NAME}_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/${PROJECT_NAME}.c")
-set(${PROJECT_NAME}_HEADER_FILES "${CMAKE_CURRENT_SOURCE_DIR}/inc/${PROJECT_NAME}.h")
+# flags for building examples, tests, installing, and other flags
+option(${LIBRARY_NAME}_OPT_BUILD_EXAMPLES "Build ${LIBRARY_NAME} examples" ${IS_TOPLEVEL_PROJECT})
+option(${LIBRARY_NAME}_OPT_BUILD_TESTS "Build and perform ${LIBRARY_NAME} tests" ${IS_TOPLEVEL_PROJECT})
+option(${LIBRARY_NAME}_OPT_INSTALL "Generate and install ${LIBRARY_NAME} target" ${IS_TOPLEVEL_PROJECT})
+option(${LIBRARY_NAME}_OPT_EXAMPLE "Build ${LIBRARY_NAME} with example flag" FALSE)
 
-if(${PROJECT_NAME}_OPT_OTHER)
-    add_compile_definitions(${PROJECT_NAME}_EXAMPLE)
+FILE(GLOB_RECURSE ${LIBRARY_NAME}_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.c")
+FILE(GLOB_RECURSE ${LIBRARY_NAME}_HEADER_FILES "${CMAKE_CURRENT_SOURCE_DIR}/inc/*.h")
+
+if(${LIBRARY_NAME}_OPT_OTHER)
+    add_compile_definitions(${LIBRARY_NAME}_EXAMPLE)
     # list(APPEND ${LIBRARY_NAME}_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/${LIBRARY_NAME}_example.c;")
 endif()
 
-if(${PROJECT_NAME}_OPT_BUILD_EXAMPLES)
+# build examples
+if(${LIBRARY_NAME}_OPT_BUILD_EXAMPLES)
     add_subdirectory(example)    
 endif()
 
-if(${PROJECT_NAME}_OPT_BUILD_TESTS)
+# build tests
+if(${LIBRARY_NAME}_OPT_BUILD_TESTS)
     enable_testing()
     include(CTest)
     add_subdirectory(test)
 endif()
 
-add_library(${PROJECT_NAME} INTERFACE)
-add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+# build library
+add_library(${LIBRARY_NAME} INTERFACE)
+add_library(${LIBRARY_NAME}::${LIBRARY_NAME} ALIAS ${LIBRARY_NAME})
 
-target_include_directories(${PROJECT_NAME}
+target_include_directories(${LIBRARY_NAME}
         INTERFACE
             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/inc>
             $<INSTALL_INTERFACE:inc>)
