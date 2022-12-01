@@ -7,7 +7,7 @@ set(LIBRARY_NAME ${PROJECT_NAME})
 
 # check if VCPKG exists and get path
 set(VCPKG_PATH "$ENV{VCPKG_ROOT}")
-if(${VCPKG_PATH} STREQUAL "")
+if(NOT DEFINED VCPKG_PATH)
     message(SEND_ERROR "VCPKG_ROOT environment variable undefined.")
 else()
     set(VCPKG TRUE)
